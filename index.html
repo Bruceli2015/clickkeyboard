@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>机械解压键盘</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;user-select:none;}
+        body{
+            min-height:100vh;
+            background: linear-gradient(145deg,#e8ecf5,#d2d9e8);
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            justify-content:center;
+            font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display",sans-serif;
+            padding:20px;
+            position:relative;
+        }
+        .title{
+            font-size:26px;
+            color:#1c1c1e;
+            margin-bottom:20px;
+            font-weight:600;
+            letter-spacing:0.5px;
+        }
+        /* iOS26 液态玻璃齿轮按钮 */
+        .gear-set{
+            position:fixed;
+            top:24px;
+            right:24px;
+            width:46px;
+            height:46px;
+            border-radius:50%;
+            border:1px solid rgba(255,255,255,0.6);
+            background:rgba(255,255,255,0.35);
+            backdrop-filter:blur(18px) saturate(180%);
+            -webkit-backdrop-filter:blur(18px) saturate(180%);
+            color:#1d1d1f;
+            font-size:24px;
+            cursor:pointer;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            box-shadow:0 4px 16px rgba(0,0,0,0.08),inset 0 1px 0 rgba(255,255,255,0.7);
+            transition:all 0.25s ease;
+            z-index:100;
+        }
+        .gear-set:hover{
+            transform:rotate(30deg) scale(1.05);
+            background:rgba(255,255,255,0.5);
+        }
+        /* iOS26 液态玻璃设置面板 */
+        .set-panel{
+            width:380px;
+            background:rgba(255,255,255,0.32);
+            backdrop-filter:blur(22px) saturate(200%);
+            -webkit-backdrop-filter:blur(22px) saturate(200%);
+            border:1px solid rgba(255,255,255,0.6);
+            border-radius:22px;
+            padding:24px;
+            box-shadow:0 8px 32px rgba(0,0,0,0.07),inset 0 1px 0 rgba(255,255,255,0.8);
+            margin-bottom:24px;
+            display:none;
+            z-index:99;
+        }
+        .set-item{
+            margin:16px 0;
+        }
+        .set-item label{
+            display:block;
+            margin-bottom:8px;
+            font-weight:500;
+            color:#1c1c1e;
+            font-size:15px;
+        }
+        .lang-btn{
+            padding:7px 14px;
+            margin-right:10px;
+            border:1px solid rgba(0,0,0,0.12);
+            background:rgba(255,255,255,0.4);
+            backdrop-filter:blur(10px);
+            border-radius:10px;
+            cursor:pointer;
+            font-size:14px;
+            transition:0.2s;
+        }
+        .lang-btn.active{
+            background:rgba(0,122,255,0.85);
+            color:#fff;
+            border-color:rgba(0,122,255,0.9);
+        }
+        select,input.text-inp{
+            width:100%;
+            padding:11px 14px;
+            border:1px solid rgba(0,0,0,0.1);
+            border-radius:14px;
+            outline:none;
+            font-size:15px;
+            background:rgba(255,255,255,0.4);
+            backdrop-filter:blur(12px);
+            color:#1c1c1e;
+        }
+        .btn-text-group{
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:10px;
+        }
+        .save-set{
+            width:100%;
+            margin-top:12px;
+            padding:12px;
+            background:rgba(0,122,255,0.8);
+            backdrop-filter:blur(10px);
+            color:#fff;
+            border:none;
+            border-radius:14px;
+            cursor:pointer;
+            font-size:16px;
+            font-weight:500;
+            box-shadow:0 4px 12px rgba(0,122,255,0.25);
+            transition:0.2s;
+        }
+        .save-set:active{
+            opacity:0.85;
+            transform:scale(0.98);
+        }
+        /* iOS26液态玻璃键盘主体 */
+        .keyboard{
+            width:330px;height:330px;
+            background:rgba(255,255,255,0.28);
+            backdrop-filter:blur(26px) saturate(210%);
+            -webkit-backdrop-filter:blur(26px) saturate(210%);
+            border:1px solid rgba(255,255,255,0.65);
+            padding:18px;
+            border-radius:28px;
+            box-shadow:0 10px 40px rgba(0,0,0,0.09),inset 0 1px 0 rgba(255,255,255,0.75);
+        }
+        .grid-box{display:grid;grid-template-columns:1fr 1fr;gap:14px;width:100%;height:100%;}
+        .press-btn{
+            border-radius:20px;
+            border:none;
+            font-size:40px;
+            font-weight:600;
+            cursor:pointer;
+            transition:all 0.12s ease;
+            background:rgba(255,255,255,0.38);
+            backdrop-filter:blur(14px);
+            -webkit-backdrop-filter:blur(14px);
+            box-shadow:0 5px 14px rgba(0,0,0,0.06),inset 0 1px 0 rgba(255,255,255,0.8);
+            color:#1c1c1e;
+        }
+        .press-btn.active{
+            transform:translateY(5px) scale(0.97);
+            box-shadow:inset 0 2px 8px rgba(0,0,0,0.1);
+            background:rgba(255,255,255,0.25);
+        }
+    </style>
+</head>
+<body>
+    <button class="gear-set" id="openSet">⚙</button>
+    <h2 class="title" id="mainTitle">机械解压键盘</h2>
+
+    <div class="set-panel" id="setPanel">
+        <div class="set-item">
+            <label id="langLab">界面语言</label>
+            <button class="lang-btn active" data-lang="zh">简体中文</button>
+            <button class="lang-btn" data-lang="en">English</button>
+        </div>
+        <div class="set-item">
+            <label id="soundLab">机械键盘音效选择</label>
+            <select id="soundSel">
+                <option value="qing">青轴 干净脆咔</option>
+                <option value="cha">茶轴 清爽敲击</option>
+                <option value="hong">红轴 轻柔轻敲</option>
+                <option value="hei">黑轴 沉稳实敲</option>
+                <option value="majiang">麻将音 干净闷响</option>
+                <option value="shizi">石子音 利落脆声</option>
+            </select>
+        </div>
+        <div class="set-item">
+            <label id="btnTextLab">自定义四个按键文字</label>
+            <div class="btn-text-group">
+                <input class="text-inp" id="inp1" value="①">
+                <input class="text-inp" id="inp2" value="②">
+                <input class="text-inp" id="inp3" value="③">
+                <input class="text-inp" id="inp4" value="④">
+            </div>
+        </div>
+        <button class="save-set" id="saveBtn">保存设置</button>
+    </div>
+
+    <div class="keyboard">
+        <div class="grid-box">
+            <button class="press-btn" id="key1">①</button>
+            <button class="press-btn" id="key2">②</button>
+            <button class="press-btn" id="key3">③</button>
+            <button class="press-btn" id="key4">④</button>
+        </div>
+    </div>
+
+<script>
+const langData = {
+    zh:{
+        mainTitle:"机械解压键盘",
+        langLab:"界面语言",
+        soundLab:"机械键盘音效选择",
+        btnTextLab:"自定义四个按键文字",
+        saveBtn:"保存设置",
+        optQing:"青轴 干净脆咔",
+        optCha:"茶轴 清爽敲击",
+        optHong:"红轴 轻柔轻敲",
+        optHei:"黑轴 沉稳实敲",
+        optMa:"麻将音 干净闷响",
+        optShi:"石子音 利落脆声"
+    },
+    en:{
+        mainTitle:"Stress Relief Keyboard",
+        langLab:"Interface Language",
+        soundLab:"Mechanical Sound",
+        btnTextLab:"Custom Button Text",
+        saveBtn:"Save Settings",
+        optQing:"Cyan Switch Crisp",
+        optCha:"Brown Switch Soft",
+        optHong:"Red Switch Quiet",
+        optHei:"Black Switch Heavy",
+        optMa:"Mahjong Sound",
+        optShi:"Gravel Sound"
+    }
+};
+let nowLang = "zh";
+let nowVoice = "qing";
+let audioCtx = null;
+
+document.querySelectorAll(".lang-btn").forEach(btn=>{
+    btn.onclick = function(){
+        document.querySelectorAll(".lang-btn").forEach(b=>b.classList.remove("active"));
+        this.classList.add("active");
+        nowLang = this.dataset.lang;
+        changeLang(nowLang);
+    }
+})
+function changeLang(lang){
+    let txt = langData[lang];
+    document.getElementById("mainTitle").innerText = txt.mainTitle;
+    document.getElementById("langLab").innerText = txt.langLab;
+    document.getElementById("soundLab").innerText = txt.soundLab;
+    document.getElementById("btnTextLab").innerText = txt.btnTextLab;
+    document.getElementById("saveBtn").innerText = txt.saveBtn;
+    let sel = document.getElementById("soundSel");
+    sel.options[0].text = txt.optQing;
+    sel.options[1].text = txt.optCha;
+    sel.options[2].text = txt.optHong;
+    sel.options[3].text = txt.optHei;
+    sel.options[4].text = txt.optMa;
+    sel.options[5].text = txt.optShi;
+}
+
+document.getElementById("openSet").onclick = function(){
+    let panel = document.getElementById("setPanel");
+    panel.style.display = panel.style.display==="block"?"none":"block";
+}
+document.getElementById("soundSel").onchange = function(){nowVoice = this.value;}
+document.getElementById("saveBtn").onclick = function(){
+    key1.innerText = inp1.value;
+    key2.innerText = inp2.value;
+    key3.innerText = inp3.value;
+    key4.innerText = inp4.value;
+    setPanel.style.display = "none";
+}
+
+// 最终调好清脆机械音效
+function playKey(){
+    if(!audioCtx)audioCtx=new(window.AudioContext||webkitAudioContext)();
+    let t=audioCtx.currentTime;
+    let len,freq,vol;
+    switch(nowVoice){
+        case "qing": len=0.05; freq=1950; vol=0.45; break;
+        case "cha": len=0.07; freq=1500; vol=0.42; break;
+        case "hong": len=0.08; freq=1100; vol=0.38; break;
+        case "hei":  len=0.10; freq=700;  vol=0.48; break;
+        case "majiang":len=0.09;freq=1200;vol=0.40;break;
+        case "shizi":len=0.04;freq=2350;vol=0.43;break;
+        default:len=0.05;freq=1950;vol=0.45;
+    }
+    let buf=audioCtx.createBuffer(1,audioCtx.sampleRate*len,audioCtx.sampleRate);
+    let data=buf.getChannelData(0);
+    for(let i=0;i<data.length;i++){
+        let p=i/data.length;
+        data[i] = (p<0.15 ? vol : vol*0.15) * Math.exp(-p*6);
+    }
+    let src=audioCtx.createBufferSource();
+    let filter=audioCtx.createBiquadFilter();
+    filter.type="lowpass";
+    filter.frequency.value=freq;
+    src.buffer=buf;
+    src.connect(filter);
+    filter.connect(audioCtx.destination);
+    src.start(t);
+    setTimeout(()=>{
+        let s2=audioCtx.createBufferSource();
+        let b2=audioCtx.createBuffer(1,audioCtx.sampleRate*len*0.3,audioCtx.sampleRate);
+        let d2=b2.getChannelData(0);
+        for(let i=0;i<d2.length;i++)d2[i]=0.08*Math.exp(-i/d2.length*5);
+        s2.buffer=b2;
+        s2.connect(filter);
+        s2.start();
+    },15);
+    if(navigator.vibrate) navigator.vibrate(22);
+}
+
+document.querySelectorAll(".press-btn").forEach(btn=>{
+    btn.onmousedown=()=>{btn.classList.add("active");playKey();}
+    btn.onmouseup=btn.onmouseleave=()=>btn.classList.remove("active");
+    btn.ontouchstart=e=>{e.preventDefault();btn.classList.add("active");playKey();}
+    btn.ontouchend=()=>btn.classList.remove("active");
+})
+</script>
+</body>
+</html>
